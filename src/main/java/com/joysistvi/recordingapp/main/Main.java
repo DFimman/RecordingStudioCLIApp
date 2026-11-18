@@ -16,11 +16,21 @@ public class Main {
             System.out.println("Connection Failed: " + e.getMessage());
         }
 
-//        viewAllAlbums();
-//        createAlbum("Coco", 1990, 4);
-//        viewAllArtist();
-//        System.out.println();
-//        createArtist("Vice Ganda");
+        // --- Testing Albums CRUD ---
+        viewAllAlbums();
+//        createAlbum("Coco", 1990, 1);
+//        updateAlbum(6, "Coco (Remastered)", 1995, 1);
+//        deleteAlbum(6);
+
+        System.out.println();
+
+        // --- Testing Artists CRUD ---
+        viewAllArtists();
+        createArtist("IV of Spades");
+        System.out.println();
+        updateArtist(9, "IV Of Spades");
+        System.out.println();
+        deleteArtist(8);
     }
 
     public static Connection connect() throws SQLException {
@@ -50,7 +60,7 @@ public class Main {
 
         } catch (Exception e) {
             System.out.println("Read Albums: " + e.getMessage());
-            }
+        }
     }
 
 
@@ -107,7 +117,7 @@ public class Main {
                 "VALUES (?, ?, ?)"; // anti -sql
 
         try (Connection connection = connect();
-        PreparedStatement preparedStatement = connection.prepareStatement(query)
+             PreparedStatement preparedStatement = connection.prepareStatement(query)
         ){
             preparedStatement.setString(1, name);
             preparedStatement.setInt(2, year);
@@ -122,14 +132,59 @@ public class Main {
         }
     }
 
-    public static void viewAllArtist(){
-        String query = "SELECT * FROM artists; "; // Create SQL Select Query
+    public static void updateAlbum(int id, String name, int year, int artistId){
+        String query = "UPDATE albums SET name = ?, year = ?, artist_id = ? WHERE album_id = ?";
+
+        try (Connection connection = connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ){
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, year);
+            preparedStatement.setInt(3, artistId);
+            preparedStatement.setInt(4, id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Album ID " + id + " updated successfully!");
+                viewAllAlbums();
+            } else {
+                System.out.println("No album found with ID " + id + ".");
+            }
+        } catch (SQLException e){
+            System.out.println("Update Album: " + e.getMessage());
+        }
+    }
+
+    public static void deleteAlbum(int id){
+        String query = "DELETE FROM albums WHERE album_id = ?";
+
+        try (Connection connection = connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ){
+            preparedStatement.setInt(1, id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Album ID " + id + " deleted successfully!");
+                viewAllAlbums();
+            } else {
+                System.out.println("No album found with ID " + id + ".");
+            }
+        } catch (SQLException e){
+            System.out.println("Delete Album: " + e.getMessage());
+        }
+    }
+
+    public static void viewAllArtists(){
+        String query = "SELECT artist_id, name FROM artists;";
 
         try (Connection connection = connect();
              Statement statement = connection.createStatement();
              ResultSet rs = statement.executeQuery(query)
         ) {
-            String[] headers = {"ID", "Name"};
+            String[] headers = {"ID", "Artist Name"};
 
             printTable(rs, headers);
 
@@ -150,12 +205,54 @@ public class Main {
             preparedStatement.executeUpdate();
 
             System.out.println("Artist: " + name + " created success!");
-            viewAllArtist();
+            viewAllArtists();
         } catch (Exception e){
             System.out.println("Update Album: " + e.getMessage());
         }
     }
 
+    public static void updateArtist(int id, String name){
+        String query = "UPDATE artists SET name = ? WHERE artist_id = ?";
+
+        try (Connection connection = connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ){
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Artist ID " + id + " updated successfully!");
+                viewAllArtists();
+            } else {
+                System.out.println("No artist found with ID " + id + ".");
+            }
+        } catch (SQLException e){
+            System.out.println("Update Artist: " + e.getMessage());
+        }
+    }
+
+    public static void deleteArtist(int id){
+        String query = "DELETE FROM artists WHERE artist_id = ?";
+
+        try (Connection connection = connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ){
+            preparedStatement.setInt(1, id);
+
+            int rowsAffected = preparedStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Artist ID " + id + " deleted successfully!");
+                viewAllArtists();
+            } else {
+                System.out.println("No artist found with ID " + id + ".");
+            }
+        } catch (SQLException e){
+            System.out.println("Delete Artist: " + e.getMessage());
+        }
+    }
 }
 
 
