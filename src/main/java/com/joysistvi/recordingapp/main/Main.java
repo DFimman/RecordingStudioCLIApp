@@ -1,5 +1,7 @@
 package com.joysistvi.recordingapp.main;
 
+import org.mindrot.jbcrypt.BCrypt;
+
 import java.util.ArrayList;
 import java.sql.*;
 
@@ -29,9 +31,13 @@ public class Main {
         //restoreArtist(1);
         //searchArtist("Re");
 
-        archiveAlbum(1);
-        restoreAlbum(1);
-        searchAlbum("Langit");
+//        archiveAlbum(1);
+//        restoreAlbum(1);
+//        searchAlbum("Langit");
+//
+//        createUser("newUser", "user123", "newuser@gmail.com");
+        loginUser("newUser", "user123"); // should show login success
+        loginUser("newUse", "user123"); // should show login error
     }
 
     public static Connection connect() throws SQLException {
@@ -130,7 +136,7 @@ public class Main {
             System.out.println("Album: " + name + " created success!");
             viewAllAlbums();
         } catch (Exception e){
-            System.out.println("Update Album ERROR: " + e.getMessage());
+            System.out.println("Create Album ERROR: " + e.getMessage());
         }
     }
 
@@ -402,5 +408,144 @@ public class Main {
         }
     }
 
+    /*
+     * WHAT IS VALIDATION?
+     * Validation is the process of checking whether incoming data is safe, complete,
+     * and valid BEFORE processing it or saving it to the database (e.g., non-empty
+     * username, valid email format, minimum password length, positive ID).
+     *
+     * Why do it early?
+     * - Prevents bad/incomplete data from entering the database.
+     * - Avoids unnecessary database queries when input is already invalid.
+     * - Gives clear feedback on what went wrong.
+     *
+     * What is a Guard Clause?
+     * A guard clause is an early-exit check (`if (invalid) { ... return; }`) placed
+     * at the top of a method so the code "fails fast" without deep if-else nesting.
+     */
 
+    public static void createUser (String uName, String rawPassword, String email){
+        // Guard Clause
+        if (uName == null || uName.trim().isEmpty()){
+            System.out.println("\nValidation Error: Username is required");
+            return;
+        }
+
+        if (email == null || email.trim().isEmpty() || !email.contains("@")){
+            System.out.println("\nValidation Error: Valid Email is required");
+            return;
+        }
+
+        if (rawPassword == null || rawPassword.trim().length() < 6) {
+            System.out.println("\nValidation Error: Valid Password is required");
+            return;
+        }
+
+        String hashedPassword = BCrypt.hashpw(rawPassword.trim(), BCrypt.gensalt());
+        String query = "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, 'USER');";
+
+        try (Connection connection = connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)
+        ){
+            preparedStatement.setString(1, uName);
+            preparedStatement.setString(2, hashedPassword);
+            preparedStatement.setString(3, email);
+
+            preparedStatement.executeUpdate();
+
+            System.out.println("User: " + uName + " created success!");
+            viewAllUsers();
+        } catch (Exception e){
+            System.out.println("Create User ERROR: " + e.getMessage());
+        }
+    }
+
+    public static void loginUser(String uname, String candidatePassword) {
+        // GUARD CLAUSE 1: Early exit if username is blank/null.
+        if (uname == null || uname.trim().isEmpty()) {
+            System.out.println("\nValidation Error: Username is required to log in.");
+            return;
+        }
+
+        // GUARD CLAUSE 2: Early exit if password is missing/empty.
+        if (candidatePassword == null || candidatePassword.isEmpty()) {
+            System.out.println("\nValidation Error: Password is required to log in.");
+            return;
+        }
+
+        // Look up the user by username first so we can retrieve the stored BCrypt hash.
+        // Notice we do NOT select or read 'id' here.
+        String query = "SELECT username, password, role FROM users WHERE username = ?";
+
+        try (Connection conn = connect();
+             PreparedStatement prep = conn.prepareStatement(query)) {
+
+            prep.setString(1, uname.trim());
+
+            try (ResultSet res = prep.executeQuery()) {
+                if (res.next()) {
+                    String storedHash = res.getString("password");
+
+                    // BCrypt.checkpw(plainText, storedHash) safely compares the entered password
+                    // against the stored hash (extracting the salt automatically).
+                    // Note: If a seeded DB row has a plain-text password instead of a BCrypt hash,
+                    // BCrypt.checkpw() will return false / throw an error unless hashed first.
+                    if (BCrypt.checkpw(candidatePassword, storedHash)) {
+                        String username = res.getString("username");
+                        String role = res.getString("role");
+                        System.out.println("\nLogin successful! Welcome, " + username + " (Role: " + role + ")");
+                    } else {
+                        // Generic message: avoids telling attackers whether the username exists or not.
+                        System.out.println("\nLogin failed: Invalid username or password.");
+                    }
+                } else {
+                    // Same generic message when username is not found.
+                    System.out.println("\nLogin failed: Invalid username or password.");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("\nLogin Error: " + e.getMessage());
+        }
+    }
+
+    public static void viewAllUsers(){
+        String query = "SELECT user_id, username, email FROM users WHERE is_archived = 0;";
+
+        try (Connection connection = connect();
+             Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery(query)
+        ) {
+            String[] headers = {"ID", "User, Email"};
+
+            printTable(rs, headers);
+
+        } catch (Exception e) {
+            System.out.println("Read Users ERROR: " + e.getMessage());
+        }
+    }
+// ============================================================================
+// PART 5: BRIDGE TO 3-TIER ARCHITECTURE (NO CONTROLLER LAYER)
+// ============================================================================
+// Once all features work in Main, split the code into focused layers/packages:
+//
+// - config       : Database connection management
+//                  Examples: DbConnection
+//
+// - model        : Plain data carriers (POJOs / entities)
+//                  Examples: Artist, Album, User
+//
+// - repository   : SQL queries & ResultSet mapping only
+//                  Examples: ArtistRepository, ArtistRepositoryImpl,
+//                            UserRepository, UserRepositoryImpl
+//
+// - service      : Validation guard clauses, business rules & password hashing
+//                  Examples: ArtistService, ArtistServiceImpl,
+//                            UserService, UserServiceImpl
+//
+// - presentation : Console menus, Scanner prompts & formatted output
+//                  Examples: ArtistView, UserView
+//
+// - Entry Point  : Dependency wiring & startup flow (main())
+//                  Example : App
+// ============================================================================
 }
