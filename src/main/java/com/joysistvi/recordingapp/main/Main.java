@@ -2,6 +2,7 @@ package com.joysistvi.recordingapp.main;
 
 import org.mindrot.jbcrypt.BCrypt;
 
+import java.time.Year;
 import java.util.ArrayList;
 import java.sql.*;
 
@@ -120,16 +121,32 @@ public class Main {
         System.out.println(border);
     }
 
-    public static void createAlbum(String name, int year, int artistID){
+    public static void createAlbum(String name, int year, int artistId){
         String query = "INSERT INTO albums (name, year, artist_id) " +
                 "VALUES (?, ?, ?)"; // anti -sql
+
+        // Guard Clause
+        if (name == null || name.trim().isEmpty()){
+            System.out.println("\nValidation Error: Album name is required");
+            return;
+        }
+
+        if (!(year > 0 && year <= Year.now().getValue() && year >= 1850)){
+            System.out.println("\nValidation Error: Year should be a appropriate value");
+            return;
+        }
+
+        if (!(artistId > 0)){
+            System.out.println("\n Validation Error: Artist ID should be positive");
+            return;
+        }
 
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
         ){
             preparedStatement.setString(1, name);
             preparedStatement.setInt(2, year);
-            preparedStatement.setInt(3, artistID);
+            preparedStatement.setInt(3, artistId);
 
             preparedStatement.executeUpdate();
 
@@ -142,6 +159,26 @@ public class Main {
 
     public static void updateAlbum(int id, String name, int year, int artistId){
         String query = "UPDATE albums SET name = ?, year = ?, artist_id = ? WHERE album_id = ?";
+
+        if (!(id > 0)){
+            System.out.println("Validation Error: Album ID should be positive");
+            return;
+        }
+
+        if (name == null || name.trim().isEmpty()){
+            System.out.println("\nValidation Error: Album name is required");
+            return;
+        }
+
+        if (!(year > 0 && year <= Year.now().getValue() && year >= 1850)){
+            System.out.println("\nValidation Error: Year should be a appropriate value");
+            return;
+        }
+
+        if (!(artistId > 0)){
+            System.out.println("\n Validation Error: Artist ID should be positive");
+            return;
+        }
 
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
@@ -166,6 +203,11 @@ public class Main {
 
     public static void deleteAlbum(int id){
         String query = "DELETE FROM albums WHERE album_id = ?";
+
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Album ID should be positive");
+            return;
+        }
 
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
@@ -205,6 +247,10 @@ public class Main {
         String query = "INSERT INTO artists (name) " +
                 "VALUES (?)"; // anti -sql
 
+        if (name == null || name.trim().isEmpty()){
+            System.out.println("\nValidation Error: Artist Name should not be empty");
+        }
+
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
         ){
@@ -221,6 +267,16 @@ public class Main {
 
     public static void updateArtist(int id, String name){
         String query = "UPDATE artists SET name = ? WHERE artist_id = ?";
+
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Artist ID should be positive");
+            return;
+        }
+
+        if (name == null || name.trim().isEmpty()){
+            System.out.println("\nValidation Error: Artist Name should not be empty");
+            return;
+        }
 
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
@@ -244,6 +300,11 @@ public class Main {
     public static void deleteArtist(int id){
         String query = "DELETE FROM artists WHERE artist_id = ?";
 
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Artist ID should be positive");
+            return;
+        }
+
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
         ){
@@ -266,6 +327,11 @@ public class Main {
     public static void archiveArtist(int id){
         String query = "UPDATE artists SET is_archived = 1 WHERE artist_id = ?";
 
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Artist ID should be positive");
+            return;
+        }
+
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
         ){
@@ -286,6 +352,11 @@ public class Main {
 
     public static void restoreArtist(int id){
         String query = "UPDATE artists SET is_archived = 0 WHERE artist_id = ?";
+
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Artist ID should be positive");
+            return;
+        }
 
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
@@ -311,6 +382,11 @@ public class Main {
         String query = "SELECT artist_id, name FROM artists " +
                 "WHERE is_archived = 0 AND name LIKE ? " +
                 "ORDER BY artist_id ASC";
+
+        if (keyword == null || keyword.trim().isEmpty()){
+            System.out.println("\nValidation Error: Keyword should not be empty");
+            return;
+        }
 
         try (Connection conn = connect();
              PreparedStatement prep = conn.prepareStatement(query)) {
@@ -339,6 +415,11 @@ public class Main {
     public static void archiveAlbum(int id){
         String query = "UPDATE albums SET is_archived = 1 WHERE album_id = ?";
 
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Album ID should be positive");
+            return;
+        }
+
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
         ){
@@ -359,6 +440,11 @@ public class Main {
 
     public static void restoreAlbum(int id){
         String query = "UPDATE albums SET is_archived = 0 WHERE album_id = ?";
+
+        if (!(id > 0)){
+            System.out.println("\nValidation Error: Album ID should be positive");
+            return;
+        }
 
         try (Connection connection = connect();
              PreparedStatement preparedStatement = connection.prepareStatement(query)
@@ -384,6 +470,10 @@ public class Main {
         String query = "SELECT album_id, name FROM albums " +
                 "WHERE is_archived = 0 AND name LIKE ? " +
                 "ORDER BY album_id ASC";
+
+        if (keyword == null || keyword.trim().isEmpty()){
+            System.out.println("\nValidation Error: Keyword should not be empty");
+        }
 
         try (Connection conn = connect();
              PreparedStatement prep = conn.prepareStatement(query)) {
